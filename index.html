@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ยินดีต้อนรับสู่เว็บไซต์ของเรา</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            text-align: center;
+        }
+
+        /* หน้าเว็บหลัก */
+        .main-content {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 1s ease;
+        }
+
+        .main-content.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        /* สไตล์ของ Popup (Modal) */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-box {
+            background: #ffffff;
+            color: #333;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 450px;
+            transform: scale(0.7);
+            transition: transform 0.4s ease;
+        }
+
+        .modal-overlay.active .modal-box {
+            transform: scale(1);
+        }
+
+        .modal-box h2 {
+            margin-bottom: 15px;
+            color: #764ba2;
+        }
+
+        .modal-box input {
+            width: 100%;
+            padding: 12px 20px;
+            margin: 20px 0;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .modal-box input:focus {
+            border-color: #667eea;
+        }
+
+        .modal-box button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+            box-shadow: 0 5px 10px rgba(118, 75, 162, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .modal-box button:hover {
+            transform: translateY(-2px);
+        }
+        
+        /* ปุ่มล้างข้อมูลสำหรับทดสอบ */
+        .reset-btn {
+            margin-top: 30px;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.4);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 15px;
+            cursor: pointer;
+        }
+        .reset-btn:hover { background: rgba(255,255,255,0.3); }
+    </style>
+</head>
+<body>
+
+    <div class="main-content" id="mainContent">
+        <h1 id="welcomeMessage">สวัสดีตอนเช้า!</h1>
+        <p>ยินดีต้อนรับเข้าสู่ระบบการเรียนรู้ยุคใหม่ของเรา</p>
+        <button class="reset-btn" onclick="resetUser()">ลบชื่อผู้ใช้ (เพื่อทดสอบใหม่)</button>
+    </div>
+
+    <div class="modal-overlay" id="welcomeModal">
+        <div class="modal-box">
+            <h2>ยินดีต้อนรับครับ/ค่ะ! ✨</h2>
+            <p>กรุณากรอกชื่อของคุณเพื่อเริ่มต้นใช้งานเว็บไซต์</p>
+            <input type="text" id="usernameInput" placeholder="พิมพ์ชื่อของคุณตรงนี้..." autocomplete="off">
+            <button id="submitBtn">เข้าสู่เว็บไซต์</button>
+        </div>
+    </div>
+
+    <script>
+        // อ้างอิง Element ต่างๆ จาก HTML
+        const welcomeModal = document.getElementById('welcomeModal');
+        const usernameInput = document.getElementById('usernameInput');
+        const submitBtn = document.getElementById('submitBtn');
+        const welcomeMessage = document.getElementById('welcomeMessage');
+        const mainContent = document.getElementById('mainContent');
+
+        // ฟังก์ชันตรวจสอบเมื่อเปิดหน้าเว็บ
+        window.addEventListener('DOMContentLoaded', () => {
+            // ตรวจสอบว่าเคยเซฟชื่อไว้ในเบราว์เซอร์ไหม
+            const savedName = localStorage.getItem('webUser');
+
+            if (savedName) {
+                // ถ้าเคยเซฟชื่อไว้แล้ว -> แสดงหน้าเว็บพร้อมชื่อทันที
+                displayWelcome(savedName);
+            } else {
+                // ถ้ายังไม่เคยกรอกชื่อ -> เปิด Popup (Modal) ขึ้นมา
+                welcomeModal.classList.add('active');
+            }
+        });
+
+        // ฟังก์ชันเมื่อกดปุ่มยืนยันชื่อ
+        submitBtn.addEventListener('click', () => {
+            const userName = usernameInput.value.trim();
+
+            if (userName === "") {
+                alert("กรุณากรอกชื่อของคุณก่อนเข้าใช้งานนะครับ/ค่ะ");
+            } else {
+                // บันทึกชื่อลงใน LocalStorage ของเบราว์เซอร์
+                localStorage.setItem('webUser', userName);
+                
+                // ปิด Popup
+                welcomeModal.classList.remove('active');
+                
+                // แสดงข้อความต้อนรับ
+                displayWelcome(userName);
+            }
+        });
+
+        // ฟังก์ชันแสดงข้อความต้อนรับบนหน้าเว็บ
+        function displayWelcome(name) {
+            welcomeMessage.innerText = `ยินดีต้อนรับคุณ ${name} 🎉`;
+            mainContent.classList.add('show');
+        }
+
+        // ฟังก์ชันล้างข้อมูล (สำหรับให้นักศึกษาเอาไว้กดทดสอบใหม่)
+        function resetUser() {
+            localStorage.removeItem('webUser');
+            location.reload();
+        }
+    </script>
+</body>
+</html>
